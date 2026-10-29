@@ -1,0 +1,9 @@
+{
+  "name": "Support Assistant",
+  "description": "A concise and helpful customer support assistant.",
+  "provider": "openai",
+  "model": "gpt-5-mini",
+  "region": "provider_managed",
+  "maxTokens": 4096,
+  "outputType": "text"
+}

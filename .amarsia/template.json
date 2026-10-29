@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "slug": "orcha-support-widget",
+  "name": "Support Chat Widget",
+  "description": "A production-ready, self-hosted support chat widget powered directly by server-side OrchaJS.",
+  "repository": "Amarsia/orcha-support-widget-template",
+  "framework": "nextjs",
+  "category": "chatbot",
+  "agent": {
+    "entrypoint": "orcha/index.ts",
+    "defaultAgent": "assistant"
+  },
+  "environment": {
+    "required": [
+      { "key": "OPENAI_API_KEY", "label": "OpenAI API key", "secret": true },
+      { "key": "VISITOR_COOKIE_SECRET", "label": "Visitor cookie signing secret", "secret": true }
+    ],
+    "optional": [
+      { "key": "WIDGET_ALLOWED_ORIGINS", "label": "Allowed embedding origins", "secret": false },
+      { "key": "AMARSIA_PROJECT_KEY", "label": "Amarsia project key", "secret": true }
+    ]
+  },
+  "deployment": {
+    "type": "container",
+    "port": 3000,
+    "persistentStorage": { "path": "/data/sessions", "required": true }
+  }
+}

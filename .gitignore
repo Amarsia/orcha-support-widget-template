@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+.orcha/
+.env
+.env.local
+.env.*.local
+*.tsbuildinfo
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
