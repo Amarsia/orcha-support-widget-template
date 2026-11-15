@@ -1,5 +1,8 @@
+import type { AgentContentInput, MessageContentInput } from "orchajs";
+
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { ConfigurationError, getAssistant } from "@/lib/server";
+import { resolveVisitorUpload, UploadError } from "@/lib/uploads";
 import { resolveVisitor, responseHeaders } from "@/lib/visitor";
 
 export const runtime = "nodejs";
@@ -8,6 +11,8 @@ export const maxDuration = 300;
 
 const encoder = new TextEncoder();
 const event = (value: unknown) => encoder.encode(`${JSON.stringify(value)}\n`);
+
+type AttachmentInput = { id?: unknown };
 
 export async function POST(request: Request): Promise<Response> {
   const visitor = resolveVisitor(request);
@@ -19,19 +24,52 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  let body: { message?: unknown; sessionId?: unknown };
+  let body: { message?: unknown; sessionId?: unknown; attachments?: unknown };
   try {
     body = await request.json() as typeof body;
   } catch {
     return Response.json({ error: "Request body must be valid JSON." }, { status: 400 });
   }
+
   const message = typeof body.message === "string" ? body.message.trim() : "";
   const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : "";
-  if (!message || message.length > 10_000) {
-    return Response.json({ error: "Message must be between 1 and 10,000 characters." }, { status: 400 });
+  const rawAttachments = Array.isArray(body.attachments) ? (body.attachments as AttachmentInput[]) : [];
+
+  if (message.length > 10_000) {
+    return Response.json({ error: "Message must be at most 10,000 characters." }, { status: 400 });
+  }
+  if (rawAttachments.length > 10) {
+    return Response.json({ error: "At most 10 attachments can be sent per message." }, { status: 400 });
+  }
+  if (!message && rawAttachments.length === 0) {
+    return Response.json({ error: "Please enter a message or attach a file." }, { status: 400 });
   }
 
   try {
+    const contentItems: MessageContentInput[] = [];
+    let firstFileName = "";
+
+    for (const item of rawAttachments) {
+      const id = typeof item?.id === "string" ? item.id.trim() : "";
+      if (!id) {
+        return Response.json({ error: "Invalid attachment reference." }, { status: 400 });
+      }
+      const { meta, filePath } = await resolveVisitorUpload(visitor.id, id);
+      if (!firstFileName) firstFileName = meta.name;
+      contentItems.push({
+        type: "file",
+        filePath,
+        mimeType: meta.mimeType,
+      });
+    }
+
+    if (message) {
+      contentItems.push({ type: "text", text: message });
+    }
+
+    const content: AgentContentInput =
+      rawAttachments.length === 0 && message ? message : contentItems;
+
     const assistant = getAssistant();
     if (sessionId) {
       const session = await assistant.get(sessionId);
@@ -39,11 +77,13 @@ export async function POST(request: Request): Promise<Response> {
         return Response.json({ error: "Conversation not found." }, { status: 404 });
       }
     }
+
+    const sessionLabelSource = message || `Attachment: ${firstFileName}`;
     const execution = sessionId
-      ? assistant.resume(sessionId, { content: message })
+      ? assistant.resume(sessionId, { content })
       : assistant.run({
-          content: message,
-          name: message.length > 52 ? `${message.slice(0, 49)}…` : message,
+          content,
+          name: sessionLabelSource.length > 52 ? `${sessionLabelSource.slice(0, 49)}…` : sessionLabelSource,
           metadata: { visitorId: visitor.id },
         });
 
@@ -69,6 +109,9 @@ export async function POST(request: Request): Promise<Response> {
       headers: responseHeaders(visitor.setCookie, "application/x-ndjson; charset=utf-8"),
     });
   } catch (error) {
+    if (error instanceof UploadError) {
+      return Response.json({ error: error.message }, { status: error.status });
+    }
     return Response.json(
       { error: error instanceof ConfigurationError ? error.message : "The assistant could not be started." },
       { status: error instanceof ConfigurationError ? 503 : 500 },

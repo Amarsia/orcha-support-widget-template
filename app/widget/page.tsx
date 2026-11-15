@@ -1,14 +1,7 @@
 import { SupportWidget } from "@/components/support-widget";
-import { widgetConfig, type WidgetTheme } from "@/config/widget";
+import { widgetConfig } from "@/config/widget";
 
 export const dynamic = "force-dynamic";
-
-function theme(value: string | string[] | undefined): WidgetTheme {
-  const selected = Array.isArray(value) ? value[0] : value;
-  return selected === "light" || selected === "dark" || selected === "system"
-    ? selected
-    : widgetConfig.theme;
-}
 
 function parentOrigin(value: string | string[] | undefined): string | undefined {
   const selected = Array.isArray(value) ? value[0] : value;
@@ -30,10 +23,8 @@ export default async function WidgetPage({
 }) {
   const query = await searchParams;
   return (
-    <SupportWidget
-      config={widgetConfig}
-      initialTheme={theme(query.theme)}
-      parentOrigin={parentOrigin(query.parentOrigin)}
-    />
+    <div className="h-dvh min-h-[480px] w-full min-w-[340px]">
+      <SupportWidget config={widgetConfig} parentOrigin={parentOrigin(query.parentOrigin)} />
+    </div>
   );
 }

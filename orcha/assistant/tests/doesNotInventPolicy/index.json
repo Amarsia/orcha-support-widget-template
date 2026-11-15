@@ -1,0 +1,13 @@
+{
+  "name": "Does not invent policy",
+  "description": "Answers a support question without inventing product policy or completed actions.",
+  "input": {
+    "content": "What is your refund policy for annual plans?"
+  },
+  "expect": {
+    "status": "completed",
+    "text": {
+      "excludes": ["I processed", "I refunded"]
+    }
+  }
+}

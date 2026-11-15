@@ -1,6 +1,19 @@
-const script = String.raw`
+import { widgetConfig } from "@/config/widget";
+
+export const dynamic = "force-dynamic";
+
+function buildEmbedScript(): string {
+  const defaults = JSON.stringify({
+    name: widgetConfig.name,
+    accent: widgetConfig.accent,
+    icon: widgetConfig.icon,
+    launcherLabel: widgetConfig.launcherLabel,
+  });
+
+  return String.raw`
 (function () {
   "use strict";
+  var DEFAULTS = ${defaults};
   var scriptElement = document.currentScript;
   var scriptOrigin = scriptElement && scriptElement.src ? new URL(scriptElement.src, document.baseURI).origin : "";
   var instance;
@@ -11,6 +24,15 @@ const script = String.raw`
       throw new Error("OrchaSupport baseUrl must use HTTPS");
     }
     return url.origin;
+  }
+
+  function resolveIconUrl(base, icon) {
+    if (!icon || typeof icon !== "string") return "";
+    try {
+      return new URL(icon, base + "/").href;
+    } catch (_) {
+      return "";
+    }
   }
 
   function number(value, fallback, min, max) {
@@ -28,28 +50,78 @@ const script = String.raw`
     var theme = /^(light|dark|system)$/.test(options.theme) ? options.theme : "system";
     var side = position === "bottom-left" ? "left" : "right";
     var open = false;
+    var currentName = DEFAULTS.name || "Support chat";
+    var currentLabel = DEFAULTS.launcherLabel || ("Open " + currentName);
+    var currentIcon = resolveIconUrl(base, options.icon || DEFAULTS.icon);
 
     var frame = document.createElement("iframe");
-    frame.title = "Support chat";
+    frame.id = "orcha-support-frame";
+    frame.title = currentName;
     frame.src = base + "/widget?theme=" + encodeURIComponent(theme) + "&parentOrigin=" + encodeURIComponent(location.origin);
-    frame.allow = "clipboard-write";
+    frame.allow = "clipboard-read; clipboard-write";
     frame.style.cssText = "display:none;position:fixed;bottom:84px;" + side + ":20px;width:min(" + width + "px,calc(100vw - 24px));height:min(" + height + "px,calc(100dvh - 104px));border:0;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.2);background:transparent;z-index:2147483646;";
 
     var button = document.createElement("button");
     button.type = "button";
     button.setAttribute("aria-expanded", "false");
     button.setAttribute("aria-controls", "orcha-support-frame");
-    button.setAttribute("aria-label", "Open support chat");
-    button.style.cssText = "position:fixed;bottom:20px;" + side + ":20px;width:52px;height:52px;border:0;border-radius:50%;padding:0;cursor:pointer;color:#fff;background:#5b5bd6;box-shadow:0 8px 28px rgba(0,0,0,.22);z-index:2147483647;font:600 24px/1 system-ui;transition:transform .15s ease;";
-    button.textContent = "✦";
-    frame.id = "orcha-support-frame";
+    button.setAttribute("aria-label", currentLabel);
+    button.style.cssText = "position:fixed;bottom:20px;" + side + ":20px;width:52px;height:52px;border:0;border-radius:16px;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#fff;background:" + (/^#[0-9a-f]{6}$/i.test(DEFAULTS.accent) ? DEFAULTS.accent : "#5b5bd6") + ";box-shadow:0 8px 28px rgba(0,0,0,.22);z-index:2147483647;font:500 24px/1 system-ui;transition:transform .15s ease,box-shadow .15s ease;";
+
+    var iconImg = document.createElement("img");
+    iconImg.alt = currentName;
+    iconImg.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;";
+
+    var closeGlyph = document.createElement("span");
+    closeGlyph.textContent = "×";
+    closeGlyph.style.cssText = "display:none;font:500 26px/1 system-ui;color:#fff;pointer-events:none;";
+
+    function syncButtonVisual() {
+      if (open) {
+        iconImg.style.display = "none";
+        closeGlyph.style.display = "block";
+      } else if (currentIcon) {
+        if (iconImg.src !== currentIcon) iconImg.src = currentIcon;
+        iconImg.style.display = "block";
+        closeGlyph.style.display = "none";
+      } else {
+        iconImg.style.display = "none";
+        closeGlyph.textContent = "✦";
+        closeGlyph.style.display = "block";
+      }
+      if (!open) closeGlyph.textContent = "×";
+    }
+
+    button.appendChild(iconImg);
+    button.appendChild(closeGlyph);
+    syncButtonVisual();
+
+    function applyConfig(cfg) {
+      if (!cfg) return;
+      if (typeof cfg.name === "string" && cfg.name) {
+        currentName = cfg.name;
+        frame.title = cfg.name;
+        iconImg.alt = cfg.name;
+      }
+      if (typeof cfg.launcherLabel === "string" && cfg.launcherLabel) {
+        currentLabel = cfg.launcherLabel;
+      }
+      if (typeof cfg.accent === "string" && /^#[0-9a-f]{6}$/i.test(cfg.accent)) {
+        button.style.background = cfg.accent;
+      }
+      if (typeof cfg.icon === "string" && cfg.icon && !options.icon) {
+        currentIcon = resolveIconUrl(base, cfg.icon);
+      }
+      button.setAttribute("aria-label", open ? ("Close " + currentName) : currentLabel);
+      syncButtonVisual();
+    }
 
     function setOpen(value) {
       open = value;
       frame.style.display = open ? "block" : "none";
-      button.textContent = open ? "×" : "✦";
       button.setAttribute("aria-expanded", String(open));
-      button.setAttribute("aria-label", (open ? "Close" : "Open") + " support chat");
+      button.setAttribute("aria-label", open ? ("Close " + currentName) : currentLabel);
+      syncButtonVisual();
       if (open) frame.focus();
     }
     button.addEventListener("click", function () { setOpen(!open); });
@@ -57,13 +129,7 @@ const script = String.raw`
     window.addEventListener("message", function (event) {
       if (event.origin !== base || event.source !== frame.contentWindow || !event.data) return;
       if (event.data.type === "orcha-support:ready") {
-        if (typeof event.data.name === "string") {
-          frame.title = event.data.name;
-          button.setAttribute("aria-label", "Open " + event.data.name);
-        }
-        if (typeof event.data.accent === "string" && /^#[0-9a-f]{6}$/i.test(event.data.accent)) {
-          button.style.background = event.data.accent;
-        }
+        applyConfig(event.data);
       }
       if (event.data.type === "orcha-support:close") setOpen(false);
     });
@@ -74,15 +140,16 @@ const script = String.raw`
     }
     if (document.body) mount();
     else document.addEventListener("DOMContentLoaded", mount, { once: true });
+
     fetch(base + "/api/config").then(function (response) {
       return response.ok ? response.json() : null;
-    }).then(function (config) {
-      if (!config) return;
-      if (config.name) frame.title = config.name;
-      if (/^#[0-9a-f]{6}$/i.test(config.accent || "")) button.style.background = config.accent;
-    }).catch(function () {});
+    }).then(applyConfig).catch(function () {});
 
-    instance = { open: function () { setOpen(true); }, close: function () { setOpen(false); }, destroy: function () { frame.remove(); button.remove(); instance = null; } };
+    instance = {
+      open: function () { setOpen(true); },
+      close: function () { setOpen(false); },
+      destroy: function () { frame.remove(); button.remove(); instance = null; }
+    };
     return instance;
   }
 
@@ -93,17 +160,19 @@ const script = String.raw`
       position: scriptElement.dataset.position,
       width: scriptElement.dataset.width,
       height: scriptElement.dataset.height,
-      theme: scriptElement.dataset.theme
+      theme: scriptElement.dataset.theme,
+      icon: scriptElement.dataset.icon
     });
   }
 })();
 `;
+}
 
 export function GET(): Response {
-  return new Response(script, {
+  return new Response(buildEmbedScript(), {
     headers: {
       "Content-Type": "application/javascript; charset=utf-8",
-      "Cache-Control": "public, max-age=300",
+      "Cache-Control": "no-cache",
       "X-Content-Type-Options": "nosniff",
     },
   });

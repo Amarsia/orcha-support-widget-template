@@ -7,7 +7,7 @@ import { orcha } from "@/orcha";
 export class ConfigurationError extends Error {}
 
 export function getAssistant(): AgentRuntime {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.AMARSIA_PROJECT_KEY?.trim()) {
     throw new ConfigurationError("The support assistant is not configured.");
   }
   const assistant = orcha.assistant as AgentRuntime | undefined;
