@@ -29,7 +29,7 @@ export async function GET(
     if (session.metadata.visitorId !== visitor.id) {
       return Response.json({ error: "Conversation not found." }, { status: 404 });
     }
-    const history = await assistant.history(sessionId, { page: 1, pageSize: 200 });
+    const history = await assistant.history(sessionId, { page: 1, pageSize: 100 });
 
     const items = await Promise.all(
       (history.items ?? []).map(async (item) => {
