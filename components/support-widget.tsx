@@ -194,7 +194,23 @@ export function SupportWidget({ config, parentOrigin }: Props) {
     }
   }, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/sessions", { cache: "no-store" })
+      .then(async (response) => {
+        const data = (await response.json()) as { items?: SessionSummary[]; error?: string };
+        if (!response.ok) throw new Error(data.error);
+        if (active) setSessions(data.items ?? []);
+      })
+      .catch((reason) => {
+        if (active) {
+          setError(reason instanceof Error ? reason.message : "Could not load conversations.");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     document.documentElement.style.setProperty("--interactive-primary", config.accent);
