@@ -85,6 +85,12 @@ npm run dev
 
 ## Embedding on Your Website
 
+When embedded via `/embed.js`, the widget renders a floating launcher button in the corner of your site that opens the chat iframe on click:
+
+| Floating Launcher | Open Support Drawer |
+| --- | --- |
+| ![Floating Support Launcher](docs/embed-launcher.png) | ![Open Support Widget Drawer](docs/embed-open.png) |
+
 ### Auto-initialized script tag
 
 Add this snippet before `</body>` on any webpage (replacing `https://support.example.com` with your deployed origin):
