@@ -2,6 +2,8 @@
 
 A self-hosted, embeddable AI support widget built with Next.js and **[OrchaJS](https://github.com/Amarsia/orcha)** ([`orchajs` on npm](https://www.npmjs.com/package/orchajs)). Use it as a drop-in starter for your website or as a reference tutorial for building secure, iframe-embeddable OrchaJS agents.
 
+![Orcha Support Widget Preview & Embed Builder](docs/preview.png)
+
 ## Links
 
 - **OrchaJS GitHub**: [github.com/Amarsia/orcha](https://github.com/Amarsia/orcha)
@@ -23,7 +25,7 @@ A self-hosted, embeddable AI support widget built with Next.js and **[OrchaJS](h
 ## How the Orcha-Powered Design Works
 
 1. **Filesystem-convention agent (`orcha/`)**
-   - `orcha/index.ts` initializes OrchaJS with Amarsia inference and cloud-backed session storage (or local/direct providers if configured).
+   - `orcha/index.ts` initializes OrchaJS with Amarsia AI Gateway and cloud-backed session storage (or local/direct providers if configured).
    - `orcha/assistant/index.json` selects the model (`provider`, `model`, `maxTokens`).
    - `orcha/assistant/instructions.md` defines support policies, tone, and boundaries.
    - `orcha/assistant/tests/` holds automated agent behavior tests run with `npm run agent:test`.
@@ -46,9 +48,9 @@ cp .env.example .env.local
 
 ### 2. Configure environment variables
 
-Choose either **Amarsia Inference** (includes free credits, cloud session storage, and telemetry) or **your own model provider keys** (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.):
+Choose either **Amarsia AI Gateway** (includes free credits, cloud session storage, and telemetry) or **your own model provider keys** (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.):
 
-**Option A — Amarsia Inference (includes free credits):**
+**Option A — Amarsia AI Gateway (includes free credits):**
 
 1. Sign up on [Amarsia](https://amarsia.com), go to **Projects**, click **Connect New Project**, and copy the generated project key.
 2. Add it to `.env.local`:
@@ -66,7 +68,7 @@ AMARSIA_API_URL=https://api.amarsia.com
 
 **Option B — Your own model provider keys:**
 
-If you prefer not to use Amarsia Inference, update `orcha/index.ts` to pass `providers: { openai: process.env.OPENAI_API_KEY ?? "" }` (or `anthropic`, `googlegenai`, `deepseek`, `bedrock`, `vertexai`) instead of `amarsia`, and adjust the key check in `lib/server.ts`. See the [OrchaJS documentation](https://github.com/Amarsia/orcha) for all provider shapes.
+If you prefer not to use Amarsia AI Gateway, update `orcha/index.ts` to pass `providers: { openai: process.env.OPENAI_API_KEY ?? "" }` (or `anthropic`, `googlegenai`, `deepseek`, `bedrock`, `vertexai`) instead of `amarsia`, and adjust the key check in `lib/server.ts`. See the [OrchaJS documentation](https://github.com/Amarsia/orcha) for all provider shapes.
 
 ### 3. Run the development server
 
