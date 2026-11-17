@@ -73,6 +73,18 @@ const markdownComponents: Record<string, ComponentType<HTMLAttributes<HTMLElemen
       {children}
     </blockquote>
   ),
+  table: ({ children, ...props }) => (
+    <div className="my-3 overflow-x-auto rounded-xl border border-[var(--border-default)]">
+      <table className="w-full border-collapse text-left text-[12.5px]" {...props}>{children}</table>
+    </div>
+  ),
+  th: ({ children, ...props }) => (
+    <th className="border-b border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-2 font-semibold" {...props}>{children}</th>
+  ),
+  td: ({ children, ...props }) => (
+    <td className="border-b border-[var(--border-default)] px-3 py-2 align-top" {...props}>{children}</td>
+  ),
+  hr: (props) => <hr className="my-4 border-0 border-t border-[var(--border-default)]" {...props} />,
 };
 
 function output(value: unknown): string {
