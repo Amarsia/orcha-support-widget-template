@@ -11,6 +11,15 @@ A self-hosted, embeddable AI support widget built with Next.js and **[OrchaJS](h
 
 ---
 
+## Why This Template
+
+- **No separate backend required** — Everything runs inside this single Next.js app. OrchaJS executes model calls, streams responses, handles file uploads, and persists visitor sessions directly inside Next.js Route Handlers—no external agent server or database infrastructure to maintain.
+- **`npm run dev` and go** — Install dependencies, add your `AMARSIA_PROJECT_KEY` (or provider key) to `.env.local`, and run `npm run dev` to get both the embed builder and a live embeddable widget immediately.
+- **Filesystem-convention agents** — Your support instructions, model selection, tools, and tests live cleanly under `orcha/`, completely decoupled from the iframe UI and `/embed.js` script.
+- **Self-hosted & embed-safe out of the box** — Ships with signed `Partitioned` visitor cookies, CSP `frame-ancestors` origin lock, rate limiting, and one-tag `<script>` embedding for any website.
+
+---
+
 ## What's Included
 
 - **Embeddable launcher + iframe UI** — Includes `/embed.js` (a zero-dependency floating button & responsive drawer script) and `/widget` (the iframe chat UI), plus a live preview + copyable snippet generator at `/`.
